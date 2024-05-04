@@ -1,0 +1,25 @@
+# Define the paths of the two directories
+$dir1 = 'C:\path\to\directory1'
+$dir2 = 'C:\path\to\directory2'
+
+# Get all files in both directories recursively
+$files1 = Get-ChildItem -Path $dir1 -Recurse
+$files2 = Get-ChildItem -Path $dir2 -Recurse
+
+# Compare the two sets of files
+$differences = Compare-Object -ReferenceObject $files1 -DifferenceObject $files2 -Property FullName, Length
+
+# Iterate over the differences
+foreach ($difference in $differences) {
+    # Get the relative path of the file
+    $relativePath = $difference.FullName.Substring($difference.FullName.IndexOf(':') + 2)
+
+    # If the file exists in directory one but not in directory two, copy the file from directory one to directory two
+    if ($difference.SideIndicator -eq '=>') {
+        Copy-Item -Path $difference.FullName -Destination (Join-Path -Path $dir2 -ChildPath $relativePath)
+    }
+    # If the file exists in directory two but not in directory one, copy the file from directory two to directory one
+    elseif ($difference.SideIndicator -eq '<=') {
+        Copy-Item -Path $difference.FullName -Destination (Join-Path -Path $dir1 -ChildPath $relativePath)
+    }
+}
